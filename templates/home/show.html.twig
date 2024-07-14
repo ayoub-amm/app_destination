@@ -1,0 +1,46 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Destination{% endblock %}
+
+{% block body %}
+    <h1>{{ destination.name }}</h1>
+
+    <table class="table">
+        <tbody>
+            <tr>
+                <th>ID</th>
+                <td>{{ destination.id }}</td>
+            </tr>
+            <tr>
+                <th>Name</th>
+                <td>{{ destination.name }}</td>
+            </tr>
+            <tr>
+                <th>Description</th>
+                <td>{{ destination.description }}</td>
+            </tr>
+            <tr>
+                <th>Price</th>
+                <td>{{ destination.price }}</td>
+            </tr>
+            <tr>
+                <th>Duration</th>
+                <td>{{ destination.duration }}</td>
+            </tr>
+            <tr>
+                <th>Image</th>
+                <td>
+                    {% if destination.image %}
+                        <img src="{{ asset('uploads/images/' ~ destination.image) }}" alt="{{ destination.name }}" width="200">
+                    {% else %}
+                        No image
+                    {% endif %}
+                </td>
+            </tr>
+        </tbody>
+    </table>
+
+    <a href="{{ path('home') }}">Back to list</a>
+
+{% endblock %}
+

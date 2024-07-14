@@ -1,0 +1,69 @@
+<?php
+// tests/Command/ExportDestinationsToCsvCommandTest.php
+namespace App\Tests\Command;
+
+use App\Command\ExportDestinationsToCsvCommand;
+use App\Service\DestinationFetcher;
+use App\Service\CsvExporter;
+use PHPUnit\Framework\TestCase;
+use Symfony\Component\Console\Application;
+use Symfony\Component\Console\Tester\CommandTester;
+use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
+use Psr\Log\LoggerInterface;
+
+class ExportDestinationsToCsvCommandTest extends TestCase
+{
+    private $fetcherMock;
+    private $csvExporterMock;
+    private $parameterBagMock;
+    private $loggerMock;
+
+    protected function setUp(): void
+    {
+        $this->fetcherMock = $this->createMock(DestinationFetcher::class);
+        $this->csvExporterMock = $this->createMock(CsvExporter::class);
+        $this->parameterBagMock = $this->createMock(ParameterBagInterface::class);
+        $this->loggerMock = $this->createMock(LoggerInterface::class);
+
+        $this->parameterBagMock->method('get')->will($this->returnValueMap([
+            ['exports_directory', 'var/exports'],
+            ['url_api_list_destinations', 'http://localhost:8000/api/destinations']
+        ]));
+    }
+
+    public function testExecuteSuccess(): void
+    {
+        $this->fetcherMock->method('fetchAll')->willReturn([
+            'hydra:member' => [
+                ['id' => 1, 'name' => 'Destination 1', 'description' => 'Description 1', 'price' => 100, 'duration' => '2 days', 'image' => 'image1.jpg'],
+            ],
+        ]);
+
+        $application = new Application();
+        $application->add(new ExportDestinationsToCsvCommand($this->fetcherMock, $this->parameterBagMock, $this->loggerMock, $this->csvExporterMock));
+
+        $command = $application->find('app:export-destinations');
+        $commandTester = new CommandTester($command);
+
+        $commandTester->execute([]);
+
+        $output = $commandTester->getDisplay();
+        $this->assertStringContainsString('Destinations exported successfully to var/exports/export_destinations_', $output);
+    }
+
+    public function testExecuteFailure(): void
+    {
+        $this->fetcherMock->method('fetchAll')->willThrowException(new \Exception('API error'));
+
+        $application = new Application();
+        $application->add(new ExportDestinationsToCsvCommand($this->fetcherMock, $this->parameterBagMock, $this->loggerMock, $this->csvExporterMock));
+
+        $command = $application->find('app:export-destinations');
+        $commandTester = new CommandTester($command);
+
+        $commandTester->execute([]);
+
+        $output = $commandTester->getDisplay();
+        $this->assertStringContainsString('An error occurred during the export process', $output);
+    }
+}
